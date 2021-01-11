@@ -1,90 +1,39 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
-	"os/exec"
+	"os"
+	"strings"
 )
 
-type Server struct {
-	ServerId string
-	ApiAddr  string
-}
-
-type Cluster struct {
-	Nodes []Server
-}
-
-func (c *Cluster) AddToConfig(s Server) {
-	c.Nodes = append(c.Nodes, s)
-}
-
-func NewCluster(size int) Cluster {
-	return Cluster{Nodes: make([]Server, size)}
-}
-
 func main() {
-
-	//CreateNewCluster
+	log.SetOutput(os.Stderr)
+	fmt.Println("Raft manager started. Waiting for commands")
+	fmt.Println("Available commands: cluster")
 	c := NewCluster(0)
 
-	cmd, err := BootstrapCluster(&c, "node1", "", "")
-	if err != nil {
-		log.Fatal(err)
+	for {
+		fmt.Print("$ ")
+		r := bufio.NewReader(os.Stdin)
+		line, err := r.ReadString('\n')
+		if err != nil {
+			log.Println("Wrong command")
+		}
+
+		cmd := strings.Fields(line)
+
+		switch cmd[0] {
+		case "exit":
+			break
+		case "cluster":
+			go ManageCluster(&c, cmd)
+
+		}
+
+		if cmd[0] == "exit" {
+			break
+		}
 	}
-
-	cmd2, err := AddServer(&c, "node2", "127.0.0.1:6000", "127.0.0.1:6500", "127.0.0.1:5500")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err = cmd.Wait(); err != nil {
-		log.Fatal(err)
-	}
-
-	if err = cmd2.Wait(); err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("Cluster: %s\n", c)
-}
-
-func BootstrapCluster(c *Cluster, Id, nodeAddr, httpAddr string) (*exec.Cmd, error) {
-	if nodeAddr == "" {
-		nodeAddr = "127.0.0.1:5000"
-	}
-
-	if httpAddr == "" {
-		httpAddr = "127.0.0.1:5500"
-	}
-
-	cmd := exec.Command("/home/tomek/Pulpit/start_scripts/bootstrap.sh", Id, nodeAddr, httpAddr)
-	err := cmd.Start()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	c.AddToConfig(Server{
-		ServerId: Id,
-		ApiAddr:  httpAddr,
-	})
-
-	return cmd, err
-}
-
-func AddServer(c *Cluster, Id, nodeAddr, httpAddr, joinAddr string) (*exec.Cmd, error) {
-	cmd := exec.Command("/home/tomek/Pulpit/start_scripts/join.sh", Id, nodeAddr, httpAddr, joinAddr)
-	err := cmd.Start()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	c.AddToConfig(Server{
-		ServerId: Id,
-		ApiAddr:  httpAddr,
-	})
-
-	return cmd, err
 }
