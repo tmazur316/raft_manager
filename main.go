@@ -46,6 +46,8 @@ func main() {
 			break
 		case "cluster":
 			ManageCluster(&config, cmd)
+		case "data":
+			ManageData(&config, cmd)
 		}
 
 		if cmd[0] == "exit" {
