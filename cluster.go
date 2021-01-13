@@ -183,6 +183,7 @@ func RemoveServer(c *Cluster, command []string) error {
 }
 
 func StartCluster(c *Cluster) error {
+	//TO
 	if len(c.Nodes) < 1 {
 		return errors.New("cluster must contain at least one server")
 	}

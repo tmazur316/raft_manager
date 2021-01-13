@@ -29,7 +29,7 @@ func main() {
 	}
 
 	fmt.Println("Raft manager started. Waiting for commands")
-	fmt.Println("Available commands: cluster, data, snapshot")
+	fmt.Println("Available commands: cluster, data, snapshot, config")
 
 	for {
 		fmt.Print("$ ")
@@ -58,8 +58,15 @@ func main() {
 			if err := ManageSnapshot(&config, cmd); err != nil {
 				fmt.Println(err)
 			}
+		case "config":
+			if err := ManageConfig(&config, cmd, configFile); err != nil {
+				fmt.Println(err)
+			}
 		case "exit":
 			break
+		default:
+			fmt.Println("Unrecognized command")
+			fmt.Println("Available commands: cluster, data, snapshot, config")
 		}
 
 		if cmd[0] == "exit" {
@@ -72,7 +79,7 @@ func main() {
 	for {
 		fmt.Println("saving current config...")
 
-		if err := SaveConfig(&config, "./config"); err != nil {
+		if err := SaveConfig(&config, *configFile); err != nil {
 			fmt.Println("attempt to save config failed. Retry [y/n]? [default = y]")
 
 			s, err := bufio.NewReader(os.Stdin).ReadString('\n')
