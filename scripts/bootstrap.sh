@@ -4,4 +4,4 @@
 #$2 raftAddr
 #$3 httpAddr
 
-x-terminal-emulator -e /home/tomek/Pulpit/Go_Projects/bin/raft_tests -id=$1 -bootstrap=true -rAddr=$2 -httpAddr=$3
+x-terminal-emulator -e /home/tomek/Pulpit/Go_Projects/src/raft_tests/raft_tests -id=$1 -bootstrap=true -rAddr=$2 -httpAddr=$3

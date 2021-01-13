@@ -5,4 +5,4 @@
 #$3 httpAddr 
 #$4 joinAddr 
 
-x-terminal-emulator -e /home/tomek/Pulpit/Go_Projects/bin/raft_tests -id=$1 -rAddr=$2 -httpAddr=$3 -joinAddr=$4
+x-terminal-emulator -e /home/tomek/Pulpit/Go_Projects/src/raft_tests/raft_tests -id=$1 -rAddr=$2 -httpAddr=$3 -joinAddr=$4

@@ -29,7 +29,7 @@ func main() {
 	}
 
 	fmt.Println("Raft manager started. Waiting for commands")
-	fmt.Println("Available commands: cluster")
+	fmt.Println("Available commands: cluster, data")
 
 	for {
 		fmt.Print("$ ")
@@ -41,13 +41,19 @@ func main() {
 
 		cmd := strings.Fields(line)
 
+		if len(cmd) == 0 {
+			continue
+		}
+
 		switch cmd[0] {
-		case "exit":
-			break
 		case "cluster":
 			ManageCluster(&config, cmd)
 		case "data":
-			ManageData(&config, cmd)
+			if err := ManageData(&config, cmd); err != nil {
+				fmt.Println(err)
+			}
+		case "exit":
+			break
 		}
 
 		if cmd[0] == "exit" {
@@ -58,7 +64,7 @@ func main() {
 	for {
 		fmt.Println("saving current config...")
 
-		if err := SaveConfig(&config, "/home/tomek/Pulpit/config"); err != nil {
+		if err := SaveConfig(&config, "./config"); err != nil {
 			fmt.Println("attempt to save config failed. Retry [y/n]? [default = y]")
 
 			s, err := bufio.NewReader(os.Stdin).ReadString('\n')
@@ -71,9 +77,9 @@ func main() {
 				fmt.Println("Exit without saving config...")
 				break
 			}
+		} else {
+			break
 		}
-
-		break
 	}
 
 	fmt.Println("Config saved")

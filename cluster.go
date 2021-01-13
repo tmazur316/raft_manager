@@ -244,11 +244,8 @@ func SaveConfig(c *Cluster, filename string) error {
 	if err != nil {
 		return err
 	}
-
-	e := json.NewEncoder(f)
-	if err := e.Encode(c); err != nil {
-		return err
-	}
+	indent, err := json.MarshalIndent(c, "", "\t")
+	f.Write(indent)
 
 	return nil
 }
