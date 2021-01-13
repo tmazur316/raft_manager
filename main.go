@@ -29,7 +29,7 @@ func main() {
 	}
 
 	fmt.Println("Raft manager started. Waiting for commands")
-	fmt.Println("Available commands: cluster, data")
+	fmt.Println("Available commands: cluster, data, snapshot")
 
 	for {
 		fmt.Print("$ ")
@@ -47,9 +47,15 @@ func main() {
 
 		switch cmd[0] {
 		case "cluster":
-			ManageCluster(&config, cmd)
+			if err := ManageCluster(&config, cmd); err != nil {
+				fmt.Println(err)
+			}
 		case "data":
 			if err := ManageData(&config, cmd); err != nil {
+				fmt.Println(err)
+			}
+		case "snapshot":
+			if err := ManageSnapshot(&config, cmd); err != nil {
 				fmt.Println(err)
 			}
 		case "exit":
@@ -60,6 +66,8 @@ func main() {
 			break
 		}
 	}
+
+	ShutdownCluster()
 
 	for {
 		fmt.Println("saving current config...")

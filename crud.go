@@ -29,7 +29,6 @@ func ManageData(c *Cluster, command []string) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -57,7 +56,6 @@ func Create(c *Cluster, command []string) error {
 	r, _ := ioutil.ReadAll(resp.Body)
 	fmt.Print(string(r))
 
-	//todo error handling of bad keys
 	if err := resp.Body.Close(); err != nil {
 		return err
 	}

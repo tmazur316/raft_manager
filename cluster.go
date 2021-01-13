@@ -29,18 +29,26 @@ func NewCluster(size int) Cluster {
 	return Cluster{Nodes: make([]Server, size)}
 }
 
-func ManageCluster(c *Cluster, command []string) {
-	//TODO error handling
+func ManageCluster(c *Cluster, command []string) error {
 	switch command[1] {
 	case "bootstrap":
-		BootstrapCluster(c, command, false)
+		if err := BootstrapCluster(c, command, false); err != nil {
+			return err
+		}
 	case "add":
-		AddServer(c, command, false)
+		if err := AddServer(c, command, false); err != nil {
+			return err
+		}
 	case "start":
-		StartCluster(c)
+		if err := StartCluster(c); err != nil {
+			return err
+		}
 	case "remove":
-		RemoveServer(c, command)
+		if err := RemoveServer(c, command); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func BootstrapCluster(c *Cluster, command []string, configStart bool) error {
@@ -66,10 +74,8 @@ func BootstrapCluster(c *Cluster, command []string, configStart bool) error {
 	}
 
 	cmd := exec.Command("scripts/bootstrap.sh", *nodeId, *nodeAddr, *httpAddr)
-	err := cmd.Start()
-
-	if err != nil {
-		return errors.New("bootstrap error")
+	if err := cmd.Start(); err != nil {
+		return err
 	}
 
 	if !configStart {
@@ -82,7 +88,7 @@ func BootstrapCluster(c *Cluster, command []string, configStart bool) error {
 	}
 
 	if err := cmd.Wait(); err != nil {
-		return errors.New("bootstrap error")
+		return err
 	}
 
 	return nil
@@ -114,10 +120,8 @@ func AddServer(c *Cluster, command []string, configStart bool) error {
 	}
 	//TODO change raft_tests path in scripts
 	cmd := exec.Command("scripts/join.sh", *nodeId, *nodeAddr, *httpAddr, *joinAddr)
-	err := cmd.Start()
-
-	if err != nil {
-		return errors.New("bootstrap error")
+	if err := cmd.Start(); err != nil {
+		return err
 	}
 
 	if !configStart {
@@ -129,7 +133,7 @@ func AddServer(c *Cluster, command []string, configStart bool) error {
 	}
 
 	if err := cmd.Wait(); err != nil {
-		return errors.New("bootstrap error")
+		return err
 	}
 
 	return nil
@@ -166,7 +170,9 @@ func RemoveServer(c *Cluster, command []string) error {
 		return err
 	}
 
-	removeFromConfig(c, *nodeId)
+	if err := removeFromConfig(c, *nodeId); err != nil {
+		return err
+	}
 	//todo response and second request to delete data
 
 	if err := resp.Body.Close(); err != nil {
@@ -177,7 +183,6 @@ func RemoveServer(c *Cluster, command []string) error {
 }
 
 func StartCluster(c *Cluster) error {
-	//TODO error handling
 	if len(c.Nodes) < 1 {
 		return errors.New("cluster must contain at least one server")
 	}
@@ -194,7 +199,9 @@ func StartCluster(c *Cluster) error {
 		l.ApiAddr,
 	}
 
-	BootstrapCluster(c, cmd, true)
+	if err := BootstrapCluster(c, cmd, true); err != nil {
+		return err
+	}
 	//TODO see if I can eliminate this sleep
 	time.Sleep(2 * time.Second)
 
@@ -213,7 +220,9 @@ func StartCluster(c *Cluster) error {
 			l.ApiAddr,
 		}
 
-		AddServer(c, cmd, true)
+		if err := AddServer(c, cmd, true); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -244,8 +253,15 @@ func SaveConfig(c *Cluster, filename string) error {
 	if err != nil {
 		return err
 	}
+
 	indent, err := json.MarshalIndent(c, "", "\t")
-	f.Write(indent)
+	if err != nil {
+		return err
+	}
+
+	if _, err := f.Write(indent); err != nil {
+		return err
+	}
 
 	return nil
 }
