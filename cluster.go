@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -56,14 +59,14 @@ func BootstrapCluster(c *Cluster, command []string, configStart bool) error {
 		return errors.New("wrong command")
 	}
 
-	var nodeId = new(string)
+	var Id = new(string)
 	var nodeAddr = new(string)
 	var httpAddr = new(string)
 
 	for i := 2; i < len(command); i += 2 {
 		switch command[i] {
 		case "-nodeId":
-			*nodeId = command[i+1]
+			*Id = command[i+1]
 		case "-nodeAddr":
 			*nodeAddr = command[i+1]
 		case "-httpAddr":
@@ -73,14 +76,33 @@ func BootstrapCluster(c *Cluster, command []string, configStart bool) error {
 		}
 	}
 
-	cmd := exec.Command("scripts/bootstrap.sh", *nodeId, *nodeAddr, *httpAddr)
+	host := strings.Split(*nodeAddr, ":")[0]
+	p := strings.Split(*httpAddr, ":")
+
+	e := fmt.Sprintf("./raft_tests -id=%s -rAddr=%s -httpAddr=%s:%s -bootstrap=true", *Id, *nodeAddr, host, p[1])
+
+	fmt.Printf("Enter a private key file path for host %s\n", host)
+
+	path, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil {
+		return err
+	}
+
+	path = strings.TrimSuffix(path, "\n")
+
+	abs, err := filepath.Abs("./scripts/ssh.go")
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command("./scripts/conn.sh", abs, p[0], path, e)
 	if err := cmd.Start(); err != nil {
 		return err
 	}
 
 	if !configStart {
 		c.AddToConfig(Server{
-			ServerId: *nodeId,
+			ServerId: *Id,
 			NodeAddr: *nodeAddr,
 			ApiAddr:  *httpAddr,
 		})
@@ -99,7 +121,7 @@ func AddServer(c *Cluster, command []string, configStart bool) error {
 		return errors.New("wrong command")
 	}
 
-	var nodeId = new(string)
+	var Id = new(string)
 	var nodeAddr = new(string)
 	var httpAddr = new(string)
 	var joinAddr = new(string)
@@ -107,7 +129,7 @@ func AddServer(c *Cluster, command []string, configStart bool) error {
 	for i := 2; i < len(command); i += 2 {
 		switch command[i] {
 		case "-nodeId":
-			*nodeId = command[i+1]
+			*Id = command[i+1]
 		case "-nodeAddr":
 			*nodeAddr = command[i+1]
 		case "-httpAddr":
@@ -118,15 +140,34 @@ func AddServer(c *Cluster, command []string, configStart bool) error {
 			return errors.New("wrong command")
 		}
 	}
-	//TODO change raft_tests path in scripts
-	cmd := exec.Command("scripts/join.sh", *nodeId, *nodeAddr, *httpAddr, *joinAddr)
+
+	host := strings.Split(*nodeAddr, ":")[0]
+	p := strings.Split(*httpAddr, ":")
+
+	e := fmt.Sprintf("./raft_tests -id=%s -rAddr=%s -httpAddr=%s:%s -joinAddr=%s", *Id, *nodeAddr, host, p[1], *joinAddr)
+
+	fmt.Printf("Enter a private key file path for host %s\n", host)
+
+	path, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil {
+		return err
+	}
+
+	path = strings.TrimSuffix(path, "\n")
+
+	abs, err := filepath.Abs("./scripts/ssh.go")
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command("./scripts/conn.sh", abs, p[0], path, e)
 	if err := cmd.Start(); err != nil {
 		return err
 	}
 
 	if !configStart {
 		c.AddToConfig(Server{
-			ServerId: *nodeId,
+			ServerId: *Id,
 			NodeAddr: *nodeAddr,
 			ApiAddr:  *httpAddr,
 		})
