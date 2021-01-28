@@ -243,8 +243,7 @@ func StartCluster(c *Cluster) error {
 	if err := BootstrapCluster(c, cmd, true); err != nil {
 		return err
 	}
-	//TODO see if I can eliminate this sleep
-	time.Sleep(2 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	for i := 1; i < len(c.Nodes); i++ {
 		f := c.Nodes[i]
@@ -301,6 +300,10 @@ func SaveConfig(c *Cluster, filename string) error {
 	}
 
 	if _, err := f.Write(indent); err != nil {
+		return err
+	}
+
+	if err := f.Close(); err != nil {
 		return err
 	}
 

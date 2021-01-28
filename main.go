@@ -12,7 +12,6 @@ import (
 func main() {
 	configFile := flag.String("config", "", "config file of a raft cluster")
 	flag.Parse()
-
 	log.SetOutput(os.Stderr)
 
 	var config Cluster
@@ -77,12 +76,51 @@ func main() {
 	ShutdownCluster()
 
 	for {
+		if *configFile != "" {
+			return
+		}
+
+		fmt.Println("No config file loaded. Do you want to load? [y/n] [default = y]")
+
+		s, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		if err != nil {
+			log.Println("Wrong command")
+		}
+
+		s = strings.TrimSuffix(s, "\n")
+
+		if s == "n" {
+			fmt.Println("Exit without saving config...")
+			return
+		}
+
+		fmt.Println("Enter config file path")
+
+		path, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		if err != nil {
+			log.Println("Wrong file path")
+		}
+
+		path = strings.TrimSuffix(path, "\n")
+
+		cmd := []string{"config", "file", "new", path}
+
+		if err := ManageConfig(&config, cmd, configFile); err != nil {
+			fmt.Println("Config file load failed")
+		} else {
+			break
+		}
+	}
+
+	for {
 		fmt.Println("saving current config...")
 
 		if err := SaveConfig(&config, *configFile); err != nil {
 			fmt.Println("attempt to save config failed. Retry [y/n]? [default = y]")
 
 			s, err := bufio.NewReader(os.Stdin).ReadString('\n')
+
+			s = strings.TrimSuffix(s, "\n")
 
 			if err != nil {
 				log.Println("Wrong command")

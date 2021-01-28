@@ -73,7 +73,7 @@ func Read(c *Cluster, command []string) error {
 	cl := &http.Client{}
 
 	for _, v := range keys {
-		url := fmt.Sprintf("http://%s/%s", c.Leader, v)
+		url := fmt.Sprintf("http://%s/key/%s", c.Leader, v)
 
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
@@ -143,7 +143,7 @@ func Delete(c *Cluster, command []string) error {
 	cl := &http.Client{}
 
 	for _, v := range keys {
-		url := fmt.Sprintf("http://%s/%s", c.Leader, v)
+		url := fmt.Sprintf("http://%s/key/%s", c.Leader, v)
 		req, err := http.NewRequest("DELETE", url, nil)
 
 		resp, err := cl.Do(req)
