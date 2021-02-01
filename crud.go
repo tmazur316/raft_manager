@@ -53,6 +53,18 @@ func Create(c *Cluster, command []string) error {
 	url := fmt.Sprintf("http://%s", c.Leader)
 	resp, _ := http.Post(url, "application/json", bytes.NewReader(b))
 
+	if resp.StatusCode == http.StatusMethodNotAllowed {
+		addr, _ := ioutil.ReadAll(resp.Body)
+		UpdateLeader(c, string(addr))
+		resp.Body.Close()
+
+		if err := Create(c, command); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	r, _ := ioutil.ReadAll(resp.Body)
 	fmt.Print(string(r))
 
@@ -83,6 +95,18 @@ func Read(c *Cluster, command []string) error {
 		resp, err := cl.Do(req)
 		if err != nil {
 			return err
+		}
+
+		if resp.StatusCode == http.StatusMethodNotAllowed {
+			addr, _ := ioutil.ReadAll(resp.Body)
+			UpdateLeader(c, string(addr))
+			resp.Body.Close()
+
+			if err := Read(c, command); err != nil {
+				return err
+			}
+
+			return nil
 		}
 
 		r, _ := ioutil.ReadAll(resp.Body)
@@ -123,6 +147,18 @@ func Update(c *Cluster, command []string) error {
 		return err
 	}
 
+	if resp.StatusCode == http.StatusMethodNotAllowed {
+		addr, _ := ioutil.ReadAll(resp.Body)
+		UpdateLeader(c, string(addr))
+		resp.Body.Close()
+
+		if err := Update(c, command); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	r, _ := ioutil.ReadAll(resp.Body)
 	fmt.Print(string(r))
 
@@ -149,6 +185,18 @@ func Delete(c *Cluster, command []string) error {
 		resp, err := cl.Do(req)
 		if err != nil {
 			return err
+		}
+
+		if resp.StatusCode == http.StatusMethodNotAllowed {
+			addr, _ := ioutil.ReadAll(resp.Body)
+			UpdateLeader(c, string(addr))
+			resp.Body.Close()
+
+			if err := Delete(c, command); err != nil {
+				return err
+			}
+
+			return nil
 		}
 
 		r, _ := ioutil.ReadAll(resp.Body)

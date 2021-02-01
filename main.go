@@ -73,7 +73,9 @@ func main() {
 		}
 	}
 
-	ShutdownCluster()
+	if err := ShutdownCluster(&config); err != nil {
+		fmt.Println("Cluster shutdown failed")
+	}
 
 	for {
 		if *configFile != "" {

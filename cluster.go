@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -211,10 +212,21 @@ func RemoveServer(c *Cluster, command []string) error {
 		return err
 	}
 
+	if resp.StatusCode == http.StatusMethodNotAllowed {
+		addr, _ := ioutil.ReadAll(resp.Body)
+		UpdateLeader(c, string(addr))
+		resp.Body.Close()
+
+		if err := RemoveServer(c, command); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	if err := removeFromConfig(c, *nodeId); err != nil {
 		return err
 	}
-	//todo response and second request to delete data
 
 	if err := resp.Body.Close(); err != nil {
 		return err
@@ -268,8 +280,26 @@ func StartCluster(c *Cluster) error {
 	return nil
 }
 
-func ShutdownCluster() {
+func ShutdownCluster(c *Cluster) error {
+	for _, node := range c.Nodes {
+		url := fmt.Sprintf("http://%s/shutdown", node.ApiAddr)
+		cl := &http.Client{}
+		req, err := http.NewRequest("DELETE", url, nil)
+		if err != nil {
+			return err
+		}
 
+		resp, err := cl.Do(req)
+		if err != nil {
+			return err
+		}
+
+		if err := resp.Body.Close(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func LoadConfig(filename string) (*Cluster, error) {
@@ -328,4 +358,13 @@ func removeFromConfig(c *Cluster, nodeID string) error {
 
 	c.Nodes = append(c.Nodes[:index], c.Nodes[index+1:]...)
 	return nil
+}
+
+func UpdateLeader(c *Cluster, leaderAddr string) {
+	for _, node := range c.Nodes {
+		if node.NodeAddr == leaderAddr {
+			c.Leader = node.ApiAddr
+			break
+		}
+	}
 }

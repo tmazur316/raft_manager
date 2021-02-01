@@ -17,6 +17,10 @@ func ManageConfig(c *Cluster, command []string, configFile *string) error {
 		if err := CurrentFile(command, configFile); err != nil {
 			return err
 		}
+	case "save":
+		if err := Save(c, configFile); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -58,9 +62,15 @@ func ConfigFileChange(command []string, configFile *string) error {
 	if errors.Is(err, os.ErrNotExist) || f.Mode().IsDir() {
 		return err
 	}
-	//todo command does not print error
-	*configFile = command[3]
-	//todo what about loading config form new file?
 
+	*configFile = command[3]
+
+	return nil
+}
+
+func Save(c *Cluster, configFile *string) error {
+	if err := SaveConfig(c, *configFile); err != nil {
+		return err
+	}
 	return nil
 }
